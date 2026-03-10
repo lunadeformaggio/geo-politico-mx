@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delimitaciones Políticas — México</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/pmtiles@3.2.0/dist/pmtiles.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f0ede8;
+      --surface:   #e8e4dd;
+      --border:    #ccc8c0;
+      --ink:       #1a1814;
+      --ink-muted: #6b6760;
+      --accent:    #2d5a3d;
+      --accent-lt: #4a8c62;
+      --hover:     rgba(45,90,61,0.12);
+      --selected:  rgba(45,90,61,0.22);
+    }
+
+    html, body { height: 100%; font-family: 'DM Mono', monospace; background: var(--bg); color: var(--ink); }
+
+    /* ── LAYOUT ── */
+    #app { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    #sidebar-header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #sidebar-header .label {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 6px;
+    }
+
+    #sidebar-header h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-size: 18px;
+      line-height: 1.3;
+      color: var(--ink);
+    }
+
+    #sidebar-header h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    /* search */
+    #search-wrap {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #search {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .15s;
+    }
+    #search:focus { border-color: var(--accent); }
+    #search::placeholder { color: var(--ink-muted); }
+
+    /* list */
+    #estado-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    #estado-list::-webkit-scrollbar { width: 4px; }
+    #estado-list::-webkit-scrollbar-track { background: transparent; }
+    #estado-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .estado-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 20px;
+      cursor: pointer;
+      font-size: 11px;
+      letter-spacing: 0.02em;
+      transition: background .1s;
+      border-left: 2px solid transparent;
+    }
+    .estado-item:hover { background: var(--hover); }
+    .estado-item.active {
+      background: var(--selected);
+      border-left-color: var(--accent);
+      color: var(--accent);
+    }
+    .estado-item .arrow {
+      font-size: 9px;
+      opacity: 0;
+      transition: opacity .15s;
+      color: var(--accent);
+    }
+    .estado-item:hover .arrow,
+    .estado-item.active .arrow { opacity: 1; }
+
+    /* info panel */
+    #info-panel {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      min-height: 80px;
+    }
+    #info-panel .info-label {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 6px;
+    }
+    #info-estado-nombre {
+      font-family: 'Fraunces', serif;
+      font-weight: 400;
+      font-size: 20px;
+      color: var(--accent);
+      min-height: 28px;
+    }
+    #info-placeholder {
+      font-size: 11px;
+      color: var(--ink-muted);
+      font-style: italic;
+    }
+
+    #btn-descargar {
+      display: none;
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    #btn-descargar:hover { background: var(--accent-lt); }
+
+    /* ── MAP ── */
+    #map { width: 100%; height: 100%; }
+
+    /* popup */
+    .maplibregl-popup-content {
+      background: var(--ink);
+      color: #fff;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 3px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    }
+    .maplibregl-popup-tip { border-top-color: var(--ink) !important; }
+
+    /* attribution */
+    .maplibregl-ctrl-attrib { font-size: 9px !important; }
+
+    /* loading */
+    #loading {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity .4s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    #loading span {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+  </style>
+</head>
+<body>
+
+<div id="loading"><span>Cargando mapa…</span></div>
+
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <div class="label">Repositorio geográfico</div>
+      <h1>Delimitaciones<br><em>Políticas</em> — México</h1>
+    </div>
+
+    <div id="search-wrap">
+      <input id="search" type="text" placeholder="Buscar estado…" autocomplete="off" />
+    </div>
+
+    <div id="estado-list"></div>
+
+    <div id="info-panel">
+      <div class="info-label">Estado seleccionado</div>
+      <div id="info-estado-nombre"></div>
+      <div id="info-placeholder">Haz clic en el mapa o en la lista</div>
+      <button id="btn-descargar">⬇ Descargar GeoJSON</button>
+    </div>
+  </aside>
+
+  <!-- MAP -->
+  <div id="map"></div>
+</div>
+
+<script>
+// ── PMTiles protocol ──────────────────────────────────────
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
+// ── Mapa base minimalista ─────────────────────────────────
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+    sources: {
+      'carto-light': {
+        type: 'raster',
+        tiles: ['https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '© OpenStreetMap © CARTO'
+      }
+    },
+    layers: [{ id: 'carto-base', type: 'raster', source: 'carto-light', paint: { 'raster-opacity': 0.6 } }]
+  },
+  center: [-102.5, 23.5],
+  zoom: 4.5,
+  minZoom: 3,
+  maxZoom: 14
+});
+
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+// ── PMTiles source ────────────────────────────────────────
+// IMPORTANTE: ajusta esta ruta si tu archivo está en otra ubicación
+const PMTILES_URL = 'pmtiles://data/Estados.pmtiles';
+
+let allEstados = [];
+let selectedNombre = null;
+let geojsonCache = null;
+
+// ── Popup ─────────────────────────────────────────────────
+const popup = new maplibregl.Popup({
+  closeButton: false,
+  closeOnClick: false,
+  offset: 8
+});
+
+// ── Cargar capas cuando el mapa esté listo ────────────────
+map.on('load', () => {
+  map.addSource('estados', {
+    type: 'vector',
+    url: PMTILES_URL
+  });
+
+  // Relleno base
+  map.addLayer({
+    id: 'estados-fill',
+    type: 'fill',
+    source: 'estados',
+    'source-layer': 'Estados',
+    paint: {
+      'fill-color': [
+        'case',
+        ['==', ['get', 'NOMGEO'], ['literal', '']], '#e0ddd8',
+        '#c8d8c0'
+      ],
+      'fill-opacity': 0.5
+    }
+  });
+
+  // Relleno de selección
+  map.addLayer({
+    id: 'estados-fill-selected',
+    type: 'fill',
+    source: 'estados',
+    'source-layer': 'Estados',
+    filter: ['==', 'NOMGEO', ''],
+    paint: {
+      'fill-color': '#2d5a3d',
+      'fill-opacity': 0.35
+    }
+  });
+
+  // Bordes
+  map.addLayer({
+    id: 'estados-line',
+    type: 'line',
+    source: 'estados',
+    'source-layer': 'Estados',
+    paint: {
+      'line-color': '#2d5a3d',
+      'line-width': 0.8,
+      'line-opacity': 0.7
+    }
+  });
+
+  // Hover fill
+  map.addLayer({
+    id: 'estados-fill-hover',
+    type: 'fill',
+    source: 'estados',
+    'source-layer': 'Estados',
+    filter: ['==', 'NOMGEO', ''],
+    paint: {
+      'fill-color': '#2d5a3d',
+      'fill-opacity': 0.15
+    }
+  });
+
+  // Obtener lista de estados para el sidebar
+  map.on('sourcedata', (e) => {
+    if (e.sourceId !== 'estados' || !e.isSourceLoaded) return;
+    const features = map.querySourceFeatures('estados', { sourceLayer: 'Estados' });
+    const nombres = [...new Set(features.map(f => f.properties.NOMGEO))].sort();
+    if (nombres.length > 0 && allEstados.length === 0) {
+      allEstados = nombres;
+      renderList(nombres);
+    }
+  });
+
+  document.getElementById('loading').classList.add('hidden');
+});
+
+// ── Hover ─────────────────────────────────────────────────
+map.on('mousemove', 'estados-fill', (e) => {
+  if (!e.features.length) return;
+  map.getCanvas().style.cursor = 'pointer';
+  const nombre = e.features[0].properties.NOMGEO;
+  map.setFilter('estados-fill-hover', ['==', 'NOMGEO', nombre]);
+  popup
+    .setLngLat(e.lngLat)
+    .setHTML(`<strong>${nombre}</strong>`)
+    .addTo(map);
+});
+
+map.on('mouseleave', 'estados-fill', () => {
+  map.getCanvas().style.cursor = '';
+  map.setFilter('estados-fill-hover', ['==', 'NOMGEO', '']);
+  popup.remove();
+});
+
+// ── Click en mapa ─────────────────────────────────────────
+map.on('click', 'estados-fill', (e) => {
+  if (!e.features.length) return;
+  const nombre = e.features[0].properties.NOMGEO;
+  selectEstado(nombre);
+});
+
+// ── Selección ─────────────────────────────────────────────
+function selectEstado(nombre) {
+  selectedNombre = nombre;
+
+  // Actualizar capa
+  map.setFilter('estados-fill-selected', ['==', 'NOMGEO', nombre]);
+
+  // Zoom al estado
+  const features = map.querySourceFeatures('estados', { sourceLayer: 'Estados' })
+    .filter(f => f.properties.NOMGEO === nombre);
+
+  if (features.length) {
+    const bounds = new maplibregl.LngLatBounds();
+    features.forEach(f => {
+      const coords = f.geometry.type === 'Polygon'
+        ? f.geometry.coordinates.flat()
+        : f.geometry.coordinates.flat(2);
+      coords.forEach(c => bounds.extend(c));
+    });
+    map.fitBounds(bounds, { padding: 60, duration: 600 });
+  }
+
+  // Sidebar info
+  document.getElementById('info-estado-nombre').textContent = nombre;
+  document.getElementById('info-placeholder').style.display = 'none';
+  document.getElementById('btn-descargar').style.display = 'block';
+
+  // Highlight lista
+  document.querySelectorAll('.estado-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.nombre === nombre);
+  });
+}
+
+// ── Lista sidebar ─────────────────────────────────────────
+function renderList(nombres) {
+  const list = document.getElementById('estado-list');
+  list.innerHTML = '';
+  nombres.forEach(nombre => {
+    const item = document.createElement('div');
+    item.className = 'estado-item';
+    item.dataset.nombre = nombre;
+    item.innerHTML = `<span>${nombre}</span><span class="arrow">→</span>`;
+    item.addEventListener('click', () => selectEstado(nombre));
+    list.appendChild(item);
+  });
+}
+
+// ── Búsqueda ──────────────────────────────────────────────
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const filtrados = allEstados.filter(n =>
+    n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)
+  );
+  renderList(filtrados);
+});
+
+// ── Descarga GeoJSON ──────────────────────────────────────
+document.getElementById('btn-descargar').addEventListener('click', () => {
+  if (!selectedNombre) return;
+
+  const features = map.querySourceFeatures('estados', { sourceLayer: 'Estados' })
+    .filter(f => f.properties.NOMGEO === selectedNombre);
+
+  if (!features.length) {
+    alert('No se pudieron obtener los datos. Intenta hacer zoom al estado primero.');
+    return;
+  }
+
+  const geojson = {
+    type: 'FeatureCollection',
+    features: features.map(f => ({
+      type: 'Feature',
+      properties: f.properties,
+      geometry: f.geometry
+    }))
+  };
+
+  const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${selectedNombre.replace(/ /g, '_')}.geojson`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
