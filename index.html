@@ -528,6 +528,9 @@ function addLayerToMap(cfg) {
     // Eventos sobre la capa hit (relleno invisible)
     map.on('mousemove', `${cfg.id}-fill-hit`, (e) => {
       if (!e.features.length) return;
+      // Si hay un municipio seleccionado, no mostrar hover en estados ni otros municipios
+      if (cfg.id === 'estados' && state.selectedEstado) return;
+      if (cfg.id === 'municipios' && state.selectedMunicipio) return;
       map.getCanvas().style.cursor = 'pointer';
       const name = e.features[0].properties[cfg.nameField] ?? '—';
       map.setFilter(`${cfg.id}-hover`, ['==', cfg.nameField, name]);
@@ -544,8 +547,9 @@ function addLayerToMap(cfg) {
       if (!e.features.length) return;
       const props = e.features[0].properties;
       const name  = props[cfg.nameField];
-      if (cfg.id === 'estados') selectEstado(name);
-      else if (cfg.id === 'municipios' && state.selectedEstado) selectMunicipio(name);
+      // skipZoom=true: no mover la pantalla al hacer clic directo en el mapa
+      if (cfg.id === 'estados') selectEstado(name, true);
+      else if (cfg.id === 'municipios' && state.selectedEstado) selectMunicipio(name, true);
       // Abrir tabla de atributos
       openAttrPanel(props, cfg.label, name);
     });
@@ -805,7 +809,7 @@ document.getElementById('search-municipio').addEventListener('input', (e) => {
 // ══════════════════════════════════════════════════════════════
 //  SELECCIONAR ESTADO
 // ══════════════════════════════════════════════════════════════
-function selectEstado(nombre) {
+function selectEstado(nombre, skipZoom = false) {
   state.selectedEstado    = nombre;
   state.selectedMunicipio = null;
   state.clippedData       = {};
@@ -820,6 +824,11 @@ function selectEstado(nombre) {
   // Restaurar visibilidad total de municipios (por si había filtro previo)
   restoreMunicipiosVisibility();
 
+  // Limpiar hover residual
+  if (map.getLayer('estados-hover'))
+    map.setFilter('estados-hover', ['==', 'NOMGEO', '___none___']);
+  popup.remove();
+
   setBadge('badge-estado', nombre);
   setBadge('badge-municipio', null);
   highlightList('list-estados', nombre);
@@ -830,7 +839,7 @@ function selectEstado(nombre) {
   document.getElementById('section-municipio').classList.remove('disabled');
   document.getElementById('municipio-hint').style.display = 'none';
 
-  zoomToFeatures('estados', cfg.sourceLayer, cfg.nameField, nombre);
+  if (!skipZoom) zoomToFeatures('estados', cfg.sourceLayer, cfg.nameField, nombre);
   loadMunicipios(nombre);
   updateButtons();
   setClipStatus(`Área: ${nombre}`);
@@ -887,12 +896,15 @@ function loadMunicipios(nombreEstado) {
   if (feats.length) {
     const cve = feats[0].properties['CVE_ENT'];
     state.selectedCVE_ENT = cve;
-    // NO filtramos municipios aquí — se muestran todos hasta que se seleccione uno
   }
 
   setTimeout(() => {
     const mFeats  = map.querySourceFeatures('municipios', { sourceLayer: munCfg.sourceLayer });
-    const nombres = [...new Set(mFeats.map(f => f.properties[munCfg.nameField]))].filter(Boolean).sort();
+    // Filtrar por CVE_ENT del estado seleccionado
+    const filtered = state.selectedCVE_ENT
+      ? mFeats.filter(f => String(f.properties[munCfg.stateField ?? 'CVE_ENT']) === String(state.selectedCVE_ENT))
+      : mFeats;
+    const nombres = [...new Set(filtered.map(f => f.properties[munCfg.nameField]))].filter(Boolean).sort();
     renderGeoList('list-municipios', nombres, selectMunicipio);
   }, 900);
 }
@@ -900,7 +912,7 @@ function loadMunicipios(nombreEstado) {
 // ══════════════════════════════════════════════════════════════
 //  SELECCIONAR MUNICIPIO — oculta los demás
 // ══════════════════════════════════════════════════════════════
-function selectMunicipio(nombre) {
+function selectMunicipio(nombre, skipZoom = false) {
   state.selectedMunicipio = nombre;
   state.clippedData = {};
 
@@ -915,14 +927,21 @@ function selectMunicipio(nombre) {
   const showFilter = ['==', munCfg.nameField, nombre];
   if (map.getLayer('municipios-line'))
     map.setFilter('municipios-line', showFilter);
+  if (map.getLayer('municipios-fill-hit'))
+    map.setFilter('municipios-fill-hit', showFilter);
+
+  // Limpiar hover inmediatamente para que no quede sombra residual
   if (map.getLayer('municipios-hover'))
-    map.setFilter('municipios-hover', showFilter);
+    map.setFilter('municipios-hover', ['==', munCfg.nameField, '___none___']);
+  if (map.getLayer('estados-hover'))
+    map.setFilter('estados-hover', ['==', 'NOMGEO', '___none___']);
+  popup.remove();
 
   setBadge('badge-municipio', nombre);
   highlightList('list-municipios', nombre);
   showDeselect('desel-municipio', true);
 
-  zoomToFeatures('municipios', munCfg.sourceLayer, munCfg.nameField, nombre);
+  if (!skipZoom) zoomToFeatures('municipios', munCfg.sourceLayer, munCfg.nameField, nombre);
   updateButtons();
   setClipStatus(`Área: ${nombre} — ${state.selectedEstado}`);
 }
@@ -961,9 +980,10 @@ function clearMunicipio() {
 //  RESTAURAR VISIBILIDAD DE MUNICIPIOS
 // ══════════════════════════════════════════════════════════════
 function restoreMunicipiosVisibility() {
-  // Quitar todos los filtros de línea y hover de municipios
-  if (map.getLayer('municipios-line'))  map.setFilter('municipios-line',  null);
-  if (map.getLayer('municipios-hover')) map.setFilter('municipios-hover', null);
+  // Quitar todos los filtros de línea, hover y hit de municipios
+  if (map.getLayer('municipios-line'))     map.setFilter('municipios-line',     null);
+  if (map.getLayer('municipios-hover'))    map.setFilter('municipios-hover',    null);
+  if (map.getLayer('municipios-fill-hit')) map.setFilter('municipios-fill-hit', null);
 }
 
 // ══════════════════════════════════════════════════════════════
