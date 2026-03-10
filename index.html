@@ -203,6 +203,7 @@
 
     /* ── MAP ── */
     #map { width: 100%; height: 100%; }
+    #map-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; }
     .maplibregl-popup-content {
       background: var(--ink); color: #fff; font-family: 'DM Mono', monospace;
       font-size: 11px; padding: 8px 12px; border-radius: 3px; max-width: 220px;
@@ -232,6 +233,92 @@
       pointer-events: none; z-index: 999; white-space: nowrap;
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── PANEL ATRIBUTOS ── */
+    #attr-panel {
+      position: absolute;
+      top: 0; right: 0;
+      width: 300px;
+      height: 100%;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      z-index: 20;
+      box-shadow: -4px 0 20px rgba(0,0,0,.08);
+    }
+    #attr-panel.open { transform: translateX(0); }
+
+    #attr-panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #attr-panel-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 400;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+    #attr-panel-layer {
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    #attr-panel-close {
+      background: none; border: none;
+      width: 28px; height: 28px;
+      border-radius: 3px; font-size: 14px;
+      color: var(--ink-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .12s, color .12s;
+      margin-left: 8px;
+    }
+    #attr-panel-close:hover { background: var(--surface2); color: var(--ink); }
+
+    #attr-table-wrap { flex: 1; overflow-y: auto; padding: 8px 0; }
+    #attr-table-wrap::-webkit-scrollbar { width: 4px; }
+    #attr-table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .attr-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      border-bottom: 1px solid rgba(0,0,0,.04);
+      min-height: 32px;
+    }
+    .attr-row:last-child { border-bottom: none; }
+    .attr-key {
+      padding: 8px 12px; font-size: 9px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ink-muted);
+      background: var(--surface2); border-right: 1px solid var(--border);
+      display: flex; align-items: center; word-break: break-all;
+    }
+    .attr-val {
+      padding: 8px 12px; font-size: 11px; color: var(--ink);
+      display: flex; align-items: center; word-break: break-word;
+    }
+    .attr-val.null { color: var(--ink-muted); font-style: italic; }
+
+    #attr-panel-footer { padding: 10px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+    #btn-copy-attrs {
+      width: 100%; padding: 7px 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 3px; font-family: 'DM Mono', monospace;
+      font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase;
+      cursor: pointer; color: var(--ink); transition: background .12s;
+    }
+    #btn-copy-attrs:hover { background: var(--border); }
+    #map-wrap { position: relative; overflow: hidden; width: 100%; height: 100%; }
   </style>
 </head>
 <body>
@@ -297,7 +384,25 @@
     </div>
   </aside>
 
-  <div id="map"></div>
+  <div id="map-wrap">
+    <div id="map"></div>
+    <!-- PANEL ATRIBUTOS -->
+    <div id="attr-panel">
+      <div id="attr-panel-header">
+        <div class="attr-meta">
+          <div id="attr-panel-title">—</div>
+          <div id="attr-panel-layer"></div>
+        </div>
+        <button id="attr-panel-close" title="Cerrar">✕</button>
+      </div>
+      <div id="attr-table-wrap">
+        <div id="attr-table"></div>
+      </div>
+      <div id="attr-panel-footer">
+        <button id="btn-copy-attrs">⧉ Copiar atributos</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -437,9 +542,12 @@ function addLayerToMap(cfg) {
     });
     map.on('click', `${cfg.id}-fill-hit`, (e) => {
       if (!e.features.length) return;
-      const name = e.features[0].properties[cfg.nameField];
+      const props = e.features[0].properties;
+      const name  = props[cfg.nameField];
       if (cfg.id === 'estados') selectEstado(name);
       else if (cfg.id === 'municipios' && state.selectedEstado) selectMunicipio(name);
+      // Abrir tabla de atributos
+      openAttrPanel(props, cfg.label, name);
     });
 
   } else if (cfg.type === 'line') {
@@ -447,6 +555,15 @@ function addLayerToMap(cfg) {
       'source-layer': cfg.sourceLayer,
       paint: { 'line-color': cfg.color, 'line-width': cfg.lineWidth ?? 1.2, 'line-opacity': cfg.lineOpacity ?? 0.8 }
     });
+    map.on('click', `${cfg.id}-line`, (e) => {
+      if (!e.features.length) return;
+      const props = e.features[0].properties;
+      openAttrPanel(props, cfg.label, props[cfg.nameField] ?? '—');
+    });
+    map.on('mousemove', `${cfg.id}-line`, (e) => {
+      if (e.features.length) map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', `${cfg.id}-line`, () => { map.getCanvas().style.cursor = ''; });
   } else if (cfg.type === 'point') {
     map.addLayer({ id: `${cfg.id}-circle`, type: 'circle', source: cfg.id,
       'source-layer': cfg.sourceLayer,
@@ -456,6 +573,15 @@ function addLayerToMap(cfg) {
         'circle-stroke-color': '#fff', 'circle-stroke-width': 0.8
       }
     });
+    map.on('click', `${cfg.id}-circle`, (e) => {
+      if (!e.features.length) return;
+      const props = e.features[0].properties;
+      openAttrPanel(props, cfg.label, props[cfg.nameField] ?? '—');
+    });
+    map.on('mousemove', `${cfg.id}-circle`, (e) => {
+      if (e.features.length) map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', `${cfg.id}-circle`, () => { map.getCanvas().style.cursor = ''; });
   }
 }
 
@@ -998,6 +1124,54 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
 }
+
+// ══════════════════════════════════════════════════════════════
+//  TABLA DE ATRIBUTOS
+// ══════════════════════════════════════════════════════════════
+let lastAttrs = {};
+
+function openAttrPanel(properties, layerLabel, featureName) {
+  lastAttrs = properties;
+
+  // Título y capa
+  document.getElementById('attr-panel-title').textContent = featureName ?? '—';
+  document.getElementById('attr-panel-layer').textContent = layerLabel;
+
+  // Construir tabla — excluir campo interno de MapLibre
+  const table = document.getElementById('attr-table');
+  table.innerHTML = '';
+
+  const skip = new Set(['_id']);
+  Object.entries(properties).forEach(([key, val]) => {
+    if (skip.has(key)) return;
+    const row = document.createElement('div');
+    row.className = 'attr-row';
+    const isNull = val === null || val === undefined || val === '';
+    row.innerHTML = `
+      <div class="attr-key">${key}</div>
+      <div class="attr-val${isNull ? ' null' : ''}">${isNull ? 'null' : val}</div>`;
+    table.appendChild(row);
+  });
+
+  document.getElementById('attr-panel').classList.add('open');
+}
+
+function closeAttrPanel() {
+  document.getElementById('attr-panel').classList.remove('open');
+}
+
+document.getElementById('attr-panel-close').addEventListener('click', closeAttrPanel);
+
+// Copiar atributos como JSON
+document.getElementById('btn-copy-attrs').addEventListener('click', () => {
+  const text = JSON.stringify(lastAttrs, null, 2);
+  navigator.clipboard.writeText(text).then(() => toast('Atributos copiados al portapapeles'));
+});
+
+// Cerrar con Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAttrPanel();
+});
 </script>
 </body>
 </html>
