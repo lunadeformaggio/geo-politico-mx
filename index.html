@@ -397,25 +397,31 @@ function addLayerToMap(cfg) {
   map.addSource(cfg.id, { type: 'vector', url: cfg.url });
 
   if (cfg.type === 'polygon') {
-    // SIN relleno permanente — solo borde
-    // Relleno solo para hover (temporal) y selección
+    // Relleno invisible — solo para capturar eventos de mouse en toda el área
+    map.addLayer({ id: `${cfg.id}-fill-hit`, type: 'fill', source: cfg.id,
+      'source-layer': cfg.sourceLayer,
+      paint: { 'fill-color': cfg.color, 'fill-opacity': 0 }
+    });
+    // Relleno hover (temporal, visible)
     map.addLayer({ id: `${cfg.id}-hover`, type: 'fill', source: cfg.id,
       'source-layer': cfg.sourceLayer,
       filter: ['==', cfg.nameField, '___none___'],
       paint: { 'fill-color': cfg.color, 'fill-opacity': 0.2 }
     });
+    // Relleno selección
     map.addLayer({ id: `${cfg.id}-fill-selected`, type: 'fill', source: cfg.id,
       'source-layer': cfg.sourceLayer,
       filter: ['==', cfg.nameField, '___none___'],
       paint: { 'fill-color': cfg.color, 'fill-opacity': 0.25 }
     });
+    // Borde
     map.addLayer({ id: `${cfg.id}-line`, type: 'line', source: cfg.id,
       'source-layer': cfg.sourceLayer,
       paint: { 'line-color': cfg.color, 'line-width': cfg.lineWidth ?? 1, 'line-opacity': cfg.lineOpacity ?? 0.7 }
     });
 
-    // Eventos hover
-    map.on('mousemove', `${cfg.id}-line`, (e) => {
+    // Eventos sobre la capa hit (relleno invisible)
+    map.on('mousemove', `${cfg.id}-fill-hit`, (e) => {
       if (!e.features.length) return;
       map.getCanvas().style.cursor = 'pointer';
       const name = e.features[0].properties[cfg.nameField] ?? '—';
@@ -424,13 +430,12 @@ function addLayerToMap(cfg) {
         .setHTML(`<div class="popup-title">${name}</div><div class="popup-sub">${cfg.label}</div>`)
         .addTo(map);
     });
-    map.on('mouseleave', `${cfg.id}-line`, () => {
+    map.on('mouseleave', `${cfg.id}-fill-hit`, () => {
       map.getCanvas().style.cursor = '';
       map.setFilter(`${cfg.id}-hover`, ['==', cfg.nameField, '___none___']);
       popup.remove();
     });
-    // Click para seleccionar en pestaña filtro
-    map.on('click', `${cfg.id}-line`, (e) => {
+    map.on('click', `${cfg.id}-fill-hit`, (e) => {
       if (!e.features.length) return;
       const name = e.features[0].properties[cfg.nameField];
       if (cfg.id === 'estados') selectEstado(name);
@@ -499,7 +504,7 @@ function bindLayerControls(cfg, item) {
   const slider = item.querySelector(`#op-${cfg.id}`);
   const label  = item.querySelector(`#lbl-op-${cfg.id}`);
 
-  const mapLayerIds = [`${cfg.id}-hover`, `${cfg.id}-fill-selected`,
+  const mapLayerIds = [`${cfg.id}-fill-hit`, `${cfg.id}-hover`, `${cfg.id}-fill-selected`,
                        `${cfg.id}-line`, `${cfg.id}-circle`];
 
   chk.addEventListener('change', () => {
@@ -583,7 +588,7 @@ function applyLayerOrder() {
   orderedIds.forEach((id, idx) => {
     const cfg = LAYERS.find(l => l.id === id);
     if (!cfg) return;
-    const layerIds = [`${id}-hover`, `${id}-fill-selected`, `${id}-line`, `${id}-circle`]
+    const layerIds = [`${id}-fill-hit`, `${id}-hover`, `${id}-fill-selected`, `${id}-line`, `${id}-circle`]
       .filter(lid => map.getLayer(lid));
 
     // Mover todas las sublayers de esta capa por encima de las anteriores
@@ -596,7 +601,7 @@ function applyLayerOrder() {
       } else {
         // Mover por debajo de la capa superior
         const nextId = orderedIds[idx + 1];
-        const nextFirstLayer = [`${nextId}-hover`, `${nextId}-fill-selected`, `${nextId}-line`, `${nextId}-circle`]
+        const nextFirstLayer = [`${nextId}-fill-hit`, `${nextId}-hover`, `${nextId}-fill-selected`, `${nextId}-line`, `${nextId}-circle`]
           .find(lid2 => map.getLayer(lid2));
         if (nextFirstLayer) map.moveLayer(lid, nextFirstLayer);
       }
