@@ -23,13 +23,12 @@
       --ink-muted:  #6b6760;
       --accent:     #2d5a3d;
       --accent-lt:  #4a8c62;
-      --accent-dim: rgba(45,90,61,0.12);
-      --accent-sel: rgba(45,90,61,0.22);
+      --accent-dim: rgba(45,90,61,0.10);
+      --accent-sel: rgba(45,90,61,0.18);
       --danger:     #8b3a3a;
     }
 
     html, body { height: 100%; font-family: 'DM Mono', monospace; background: var(--bg); color: var(--ink); overflow: hidden; }
-
     #app { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }
 
     /* ── SIDEBAR ── */
@@ -41,41 +40,19 @@
       overflow: hidden;
       z-index: 10;
     }
-
-    #sidebar-header {
-      padding: 20px 20px 14px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .label-tiny {
-      font-size: 9px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      margin-bottom: 5px;
-    }
-    #sidebar-header h1 {
-      font-family: 'Fraunces', serif;
-      font-weight: 300;
-      font-size: 17px;
-      line-height: 1.3;
-    }
+    #sidebar-header { padding: 20px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .label-tiny { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 5px; }
+    #sidebar-header h1 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 17px; line-height: 1.3; }
     #sidebar-header h1 em { font-style: italic; color: var(--accent); }
 
     /* tabs */
     #tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
     .tab-btn {
-      flex: 1;
-      height: 36px;
-      background: none;
-      border: none;
+      flex: 1; height: 36px; background: none; border: none;
       border-bottom: 2px solid transparent;
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: 9px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--ink-muted); cursor: pointer;
       transition: color .15s, border-color .15s;
     }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
@@ -89,67 +66,58 @@
     #panel-capas::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     .layer-group-header {
-      padding: 8px 16px;
-      font-size: 9px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      background: var(--surface2);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
+      padding: 8px 16px; font-size: 9px; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--ink-muted);
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 1;
     }
 
+    /* drag-and-drop layer items */
     .layer-item {
-      padding: 10px 16px;
+      padding: 10px 12px 10px 10px;
       border-bottom: 1px solid rgba(0,0,0,.05);
+      cursor: default;
+      transition: background .15s;
+      user-select: none;
     }
-    .layer-item-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
+    .layer-item.dragging { opacity: 0.4; background: var(--surface2); }
+    .layer-item.drag-over { background: var(--accent-dim); border-top: 2px solid var(--accent); }
+
+    .layer-item-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+
+    /* drag handle */
+    .drag-handle {
+      display: flex; flex-direction: column; gap: 2.5px;
+      cursor: grab; padding: 2px; flex-shrink: 0; opacity: 0.35;
+      transition: opacity .15s;
     }
+    .drag-handle:hover { opacity: 0.8; }
+    .drag-handle span { display: block; width: 12px; height: 1.5px; background: var(--ink); border-radius: 1px; }
+
     .layer-checkbox {
-      appearance: none;
-      width: 14px; height: 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 2px;
-      cursor: pointer;
-      flex-shrink: 0;
-      position: relative;
+      appearance: none; width: 14px; height: 14px;
+      border: 1.5px solid var(--border); border-radius: 2px;
+      cursor: pointer; flex-shrink: 0; position: relative;
       transition: background .12s, border-color .12s;
     }
     .layer-checkbox:checked { background: var(--accent); border-color: var(--accent); }
     .layer-checkbox:checked::after {
-      content: '';
-      position: absolute;
-      left: 3px; top: 1px;
-      width: 5px; height: 8px;
-      border: 1.5px solid #fff;
-      border-top: none; border-left: none;
-      transform: rotate(40deg);
+      content: ''; position: absolute; left: 3px; top: 1px;
+      width: 5px; height: 8px; border: 1.5px solid #fff;
+      border-top: none; border-left: none; transform: rotate(40deg);
     }
     .layer-name { font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .layer-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-    .layer-opacity-wrap { display: flex; align-items: center; gap: 8px; }
+    .layer-opacity-wrap { display: flex; align-items: center; gap: 8px; padding-left: 19px; }
     .layer-opacity-label { font-size: 9px; color: var(--ink-muted); width: 28px; flex-shrink: 0; }
     .layer-opacity {
-      flex: 1;
-      -webkit-appearance: none;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
+      flex: 1; -webkit-appearance: none; height: 3px;
+      background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
     }
     .layer-opacity::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: var(--accent); cursor: pointer;
     }
 
     /* ── TAB FILTRO ── */
@@ -158,41 +126,42 @@
     #panel-filtro::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     .filtro-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-    .filtro-section .label-tiny { margin-bottom: 10px; }
+    .filtro-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .filtro-section-header .label-tiny { margin-bottom: 0; }
+
+    /* deselect button */
+    .btn-deselect {
+      display: none; background: none; border: none;
+      font-family: 'DM Mono', monospace; font-size: 9px;
+      color: var(--danger); cursor: pointer; padding: 2px 6px;
+      border-radius: 2px; transition: background .1s;
+      letter-spacing: 0.05em;
+    }
+    .btn-deselect.visible { display: block; }
+    .btn-deselect:hover { background: rgba(139,58,58,.08); }
 
     #search-estado, #search-municipio {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 6px 10px;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      color: var(--ink);
-      outline: none;
-      margin-bottom: 6px;
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 3px; padding: 6px 10px;
+      font-family: 'DM Mono', monospace; font-size: 11px;
+      color: var(--ink); outline: none; margin-bottom: 6px;
     }
     #search-estado:focus, #search-municipio:focus { border-color: var(--accent); }
 
     .geo-list {
-      max-height: 150px;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      background: var(--bg);
+      max-height: 150px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 3px; background: var(--bg);
     }
     .geo-list::-webkit-scrollbar { width: 3px; }
     .geo-list::-webkit-scrollbar-thumb { background: var(--border); }
 
     .geo-item {
-      padding: 7px 10px;
-      font-size: 10px;
-      cursor: pointer;
-      border-left: 2px solid transparent;
-      transition: background .1s;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 7px 10px; font-size: 10px; cursor: pointer;
+      border-left: 2px solid transparent; transition: background .1s;
+      display: flex; justify-content: space-between; align-items: center;
     }
     .geo-item:hover { background: var(--accent-dim); }
     .geo-item.active { background: var(--accent-sel); border-left-color: var(--accent); color: var(--accent); }
@@ -200,33 +169,26 @@
     .geo-item:hover .geo-arrow, .geo-item.active .geo-arrow { opacity: 1; }
 
     .selected-badge {
-      display: none;
-      margin-top: 8px;
-      padding: 5px 10px;
-      background: var(--accent-sel);
-      border-radius: 3px;
-      font-size: 10px;
-      color: var(--accent);
+      display: none; margin-top: 8px; padding: 5px 10px;
+      background: var(--accent-sel); border-radius: 3px;
+      font-size: 10px; color: var(--accent);
     }
     .selected-badge.visible { display: block; }
 
+    /* municipios section disabled state */
+    #section-municipio.disabled { opacity: 0.45; pointer-events: none; }
+    #section-municipio .hint {
+      font-size: 10px; color: var(--ink-muted); font-style: italic; margin-bottom: 8px;
+    }
+
     .action-btns {
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      border-bottom: 1px solid var(--border);
+      padding: 12px 16px; display: flex; flex-direction: column;
+      gap: 6px; border-bottom: 1px solid var(--border);
     }
     .btn {
-      width: 100%;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 3px;
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      cursor: pointer;
+      width: 100%; padding: 8px 12px; border: none; border-radius: 3px;
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer;
       transition: background .15s, opacity .15s;
     }
     .btn:disabled { opacity: 0.4; cursor: default; }
@@ -237,64 +199,37 @@
     .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 9px; }
     .btn-danger:not(:disabled):hover { background: rgba(139,58,58,.08); }
 
-    #clip-status {
-      padding: 10px 16px;
-      font-size: 10px;
-      color: var(--ink-muted);
-      font-style: italic;
-    }
+    #clip-status { padding: 10px 16px; font-size: 10px; color: var(--ink-muted); font-style: italic; }
 
     /* ── MAP ── */
     #map { width: 100%; height: 100%; }
-
     .maplibregl-popup-content {
-      background: var(--ink);
-      color: #fff;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      padding: 8px 12px;
-      border-radius: 3px;
-      max-width: 220px;
+      background: var(--ink); color: #fff; font-family: 'DM Mono', monospace;
+      font-size: 11px; padding: 8px 12px; border-radius: 3px; max-width: 220px;
     }
     .maplibregl-popup-tip { border-top-color: var(--ink) !important; }
     .popup-title { font-weight: 500; margin-bottom: 3px; }
     .popup-sub { font-size: 9px; opacity: .6; }
 
     #loading {
-      position: absolute;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-      transition: opacity .4s;
+      position: absolute; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; transition: opacity .4s;
     }
     #loading.hidden { opacity: 0; pointer-events: none; }
     #loading span {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      animation: pulse 1.4s ease-in-out infinite;
+      font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--ink-muted); animation: pulse 1.4s ease-in-out infinite;
     }
     @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
 
     #toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
+      position: fixed; bottom: 24px; left: 50%;
       transform: translateX(-50%) translateY(10px);
-      background: var(--ink);
-      color: #fff;
-      padding: 8px 16px;
-      border-radius: 4px;
-      font-size: 11px;
-      opacity: 0;
+      background: var(--ink); color: #fff; padding: 8px 16px;
+      border-radius: 4px; font-size: 11px; opacity: 0;
       transition: opacity .25s, transform .25s;
-      pointer-events: none;
-      z-index: 999;
-      white-space: nowrap;
+      pointer-events: none; z-index: 999; white-space: nowrap;
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
@@ -305,7 +240,6 @@
 <div id="toast"></div>
 
 <div id="app">
-
   <aside id="sidebar">
     <div id="sidebar-header">
       <div class="label-tiny">Visor geográfico — lunadeformaggio</div>
@@ -319,66 +253,47 @@
 
     <!-- TAB CAPAS -->
     <div id="panel-capas" class="tab-panel active">
-
-      <div class="layer-group-header">Delimitaciones base</div>
-
-      <div class="layer-item">
-        <div class="layer-item-top">
-          <input type="checkbox" class="layer-checkbox" id="chk-estados" checked />
-          <span class="layer-color-dot" style="background:#2d5a3d"></span>
-          <label class="layer-name" for="chk-estados">Estados</label>
-        </div>
-        <div class="layer-opacity-wrap">
-          <span class="layer-opacity-label" id="lbl-op-estados">100%</span>
-          <input type="range" class="layer-opacity" id="op-estados" min="0" max="100" value="100" />
-        </div>
+      <div class="layer-group-header">Orden y visibilidad — arrastra para reordenar</div>
+      <div id="layers-list">
+        <!-- generado dinámicamente -->
       </div>
-
-      <div class="layer-item">
-        <div class="layer-item-top">
-          <input type="checkbox" class="layer-checkbox" id="chk-municipios" checked />
-          <span class="layer-color-dot" style="background:#5a7a8a"></span>
-          <label class="layer-name" for="chk-municipios">Municipios</label>
-        </div>
-        <div class="layer-opacity-wrap">
-          <span class="layer-opacity-label" id="lbl-op-municipios">100%</span>
-          <input type="range" class="layer-opacity" id="op-municipios" min="0" max="100" value="100" />
-        </div>
-      </div>
-
-      <!-- Capas adicionales se inyectan aquí -->
-      <div id="extra-layers-container"></div>
-
     </div>
 
     <!-- TAB FILTRO -->
     <div id="panel-filtro" class="tab-panel">
 
-      <div class="filtro-section">
-        <div class="label-tiny">1 — Selecciona un estado</div>
+      <!-- Estado -->
+      <div class="filtro-section" id="section-estado">
+        <div class="filtro-section-header">
+          <div class="label-tiny">Estado</div>
+          <button class="btn-deselect" id="desel-estado" title="Deseleccionar">✕ deseleccionar</button>
+        </div>
         <input id="search-estado" type="text" placeholder="Buscar estado…" autocomplete="off" />
         <div class="geo-list" id="list-estados"></div>
         <div class="selected-badge" id="badge-estado"></div>
       </div>
 
-      <div class="filtro-section">
-        <div class="label-tiny">2 — Municipio (opcional)</div>
-        <input id="search-municipio" type="text" placeholder="Buscar municipio…" autocomplete="off" />
-        <div class="geo-list" id="list-municipios">
-          <div class="geo-item" style="color:var(--ink-muted);cursor:default;font-size:10px">Selecciona un estado primero</div>
+      <!-- Municipio -->
+      <div class="filtro-section disabled" id="section-municipio">
+        <div class="filtro-section-header">
+          <div class="label-tiny">Municipio <span style="opacity:.5">(opcional)</span></div>
+          <button class="btn-deselect" id="desel-municipio" title="Deseleccionar">✕ deseleccionar</button>
         </div>
+        <div class="hint" id="municipio-hint">Selecciona un estado primero</div>
+        <input id="search-municipio" type="text" placeholder="Buscar municipio…" autocomplete="off" />
+        <div class="geo-list" id="list-municipios"></div>
         <div class="selected-badge" id="badge-municipio"></div>
       </div>
 
+      <!-- Acciones -->
       <div class="action-btns">
         <button class="btn btn-primary" id="btn-zoom" disabled>↗ Zoom al área</button>
         <button class="btn btn-primary" id="btn-clip" disabled>✂ Recortar capas visibles</button>
         <button class="btn btn-secondary" id="btn-download-clip" disabled>⬇ Descargar recorte (GeoJSON)</button>
-        <button class="btn btn-danger" id="btn-reset">↺ Limpiar selección</button>
+        <button class="btn btn-danger" id="btn-reset">↺ Limpiar todo</button>
       </div>
 
       <div id="clip-status">Sin área seleccionada</div>
-
     </div>
   </aside>
 
@@ -388,8 +303,8 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 //  CONFIGURACIÓN DE CAPAS
-//  Para agregar una capa nueva, añade un objeto a este array.
 //  type: 'polygon' | 'line' | 'point'
+//  Para agregar capas nuevas, añade objetos a este array.
 // ══════════════════════════════════════════════════════════════
 const LAYERS = [
   {
@@ -400,10 +315,8 @@ const LAYERS = [
     nameField:   'NOMGEO',
     type:        'polygon',
     color:       '#2d5a3d',
-    fillOpacity: 0.12,
-    lineOpacity: 0.8,
-    lineWidth:   1.2,
-    builtIn:     true   // ya tiene controles hardcoded en HTML
+    lineOpacity: 0.85,
+    lineWidth:   1.2
   },
   {
     id:          'municipios',
@@ -414,31 +327,28 @@ const LAYERS = [
     stateField:  'CVE_ENT',
     type:        'polygon',
     color:       '#5a7a8a',
-    fillOpacity: 0.06,
-    lineOpacity: 0.55,
-    lineWidth:   0.5,
-    builtIn:     true
+    lineOpacity: 0.6,
+    lineWidth:   0.5
   }
-  // ── Agrega más capas aquí ──────────────────────────────────
-  // Ejemplo líneas:
+  // Ejemplos de capas adicionales:
   // { id:'carreteras', label:'Carreteras', url:'pmtiles://data/Carreteras.pmtiles',
   //   sourceLayer:'Carreteras', nameField:'NOMBRE', type:'line',
   //   color:'#8b6914', lineOpacity:0.8, lineWidth:1.5 }
   //
-  // Ejemplo puntos:
   // { id:'localidades', label:'Localidades', url:'pmtiles://data/Localidades.pmtiles',
   //   sourceLayer:'Localidades', nameField:'NOMGEO', type:'point',
   //   color:'#8b3a3a', fillOpacity:0.8 }
 ];
 
 // ══════════════════════════════════════════════════════════════
-//  ESTADO
+//  ESTADO DE LA APP
 // ══════════════════════════════════════════════════════════════
 const state = {
   selectedEstado:    null,
   selectedMunicipio: null,
   selectedCVE_ENT:   null,
-  clippedData:       {}
+  clippedData:       {},
+  layerOrder:        LAYERS.map(l => l.id)   // orden actual (primero = más abajo en mapa)
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -469,104 +379,103 @@ const map = new maplibregl.Map({
 });
 
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-
 const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
 
 // ══════════════════════════════════════════════════════════════
 //  CARGAR CAPAS AL MAPA
 // ══════════════════════════════════════════════════════════════
 map.on('load', () => {
+  LAYERS.forEach(cfg => addLayerToMap(cfg));
+  buildLayerList();
 
-  LAYERS.forEach(cfg => {
-    map.addSource(cfg.id, { type: 'vector', url: cfg.url });
-
-    if (cfg.type === 'polygon') {
-      map.addLayer({ id: `${cfg.id}-fill`, type: 'fill', source: cfg.id,
-        'source-layer': cfg.sourceLayer,
-        paint: { 'fill-color': cfg.color, 'fill-opacity': cfg.fillOpacity ?? 0.12 }
-      });
-      map.addLayer({ id: `${cfg.id}-fill-selected`, type: 'fill', source: cfg.id,
-        'source-layer': cfg.sourceLayer,
-        filter: ['==', cfg.nameField, '___none___'],
-        paint: { 'fill-color': cfg.color, 'fill-opacity': 0.38 }
-      });
-      map.addLayer({ id: `${cfg.id}-hover`, type: 'fill', source: cfg.id,
-        'source-layer': cfg.sourceLayer,
-        filter: ['==', cfg.nameField, '___none___'],
-        paint: { 'fill-color': cfg.color, 'fill-opacity': 0.18 }
-      });
-      map.addLayer({ id: `${cfg.id}-line`, type: 'line', source: cfg.id,
-        'source-layer': cfg.sourceLayer,
-        paint: { 'line-color': cfg.color, 'line-width': cfg.lineWidth ?? 1, 'line-opacity': cfg.lineOpacity ?? 0.7 }
-      });
-
-      // hover events
-      map.on('mousemove', `${cfg.id}-fill`, (e) => {
-        if (!e.features.length) return;
-        map.getCanvas().style.cursor = 'pointer';
-        const name = e.features[0].properties[cfg.nameField] ?? '—';
-        map.setFilter(`${cfg.id}-hover`, ['==', cfg.nameField, name]);
-        popup.setLngLat(e.lngLat)
-          .setHTML(`<div class="popup-title">${name}</div><div class="popup-sub">${cfg.label}</div>`)
-          .addTo(map);
-      });
-      map.on('mouseleave', `${cfg.id}-fill`, () => {
-        map.getCanvas().style.cursor = '';
-        map.setFilter(`${cfg.id}-hover`, ['==', cfg.nameField, '___none___']);
-        popup.remove();
-      });
-      map.on('click', `${cfg.id}-fill`, (e) => {
-        if (!e.features.length) return;
-        const name = e.features[0].properties[cfg.nameField];
-        if (cfg.id === 'estados') selectEstado(name);
-        else if (cfg.id === 'municipios') selectMunicipio(name);
-      });
-
-    } else if (cfg.type === 'line') {
-      map.addLayer({ id: `${cfg.id}-line`, type: 'line', source: cfg.id,
-        'source-layer': cfg.sourceLayer,
-        paint: { 'line-color': cfg.color, 'line-width': cfg.lineWidth ?? 1.2, 'line-opacity': cfg.lineOpacity ?? 0.8 }
-      });
-
-    } else if (cfg.type === 'point') {
-      map.addLayer({ id: `${cfg.id}-circle`, type: 'circle', source: cfg.id,
-        'source-layer': cfg.sourceLayer,
-        paint: {
-          'circle-color': cfg.color, 'circle-radius': 4,
-          'circle-opacity': cfg.fillOpacity ?? 0.8,
-          'circle-stroke-color': '#fff', 'circle-stroke-width': 0.8
-        }
-      });
-    }
-  });
-
-  // Construir controles para capas NO builtIn
-  buildExtraLayerControls();
-
-  // Cargar lista de estados
   map.on('sourcedata', onSourceData);
-
   document.getElementById('loading').classList.add('hidden');
 });
 
-// ══════════════════════════════════════════════════════════════
-//  CONTROLES DINÁMICOS PARA CAPAS EXTRA
-// ══════════════════════════════════════════════════════════════
-function buildExtraLayerControls() {
-  const container = document.getElementById('extra-layers-container');
-  const extras = LAYERS.filter(l => !l.builtIn);
-  if (!extras.length) return;
+function addLayerToMap(cfg) {
+  if (map.getSource(cfg.id)) return;
+  map.addSource(cfg.id, { type: 'vector', url: cfg.url });
 
-  const header = document.createElement('div');
-  header.className = 'layer-group-header';
-  header.textContent = 'Capas adicionales';
-  container.appendChild(header);
+  if (cfg.type === 'polygon') {
+    // SIN relleno permanente — solo borde
+    // Relleno solo para hover (temporal) y selección
+    map.addLayer({ id: `${cfg.id}-hover`, type: 'fill', source: cfg.id,
+      'source-layer': cfg.sourceLayer,
+      filter: ['==', cfg.nameField, '___none___'],
+      paint: { 'fill-color': cfg.color, 'fill-opacity': 0.2 }
+    });
+    map.addLayer({ id: `${cfg.id}-fill-selected`, type: 'fill', source: cfg.id,
+      'source-layer': cfg.sourceLayer,
+      filter: ['==', cfg.nameField, '___none___'],
+      paint: { 'fill-color': cfg.color, 'fill-opacity': 0.25 }
+    });
+    map.addLayer({ id: `${cfg.id}-line`, type: 'line', source: cfg.id,
+      'source-layer': cfg.sourceLayer,
+      paint: { 'line-color': cfg.color, 'line-width': cfg.lineWidth ?? 1, 'line-opacity': cfg.lineOpacity ?? 0.7 }
+    });
 
-  extras.forEach(cfg => {
+    // Eventos hover
+    map.on('mousemove', `${cfg.id}-line`, (e) => {
+      if (!e.features.length) return;
+      map.getCanvas().style.cursor = 'pointer';
+      const name = e.features[0].properties[cfg.nameField] ?? '—';
+      map.setFilter(`${cfg.id}-hover`, ['==', cfg.nameField, name]);
+      popup.setLngLat(e.lngLat)
+        .setHTML(`<div class="popup-title">${name}</div><div class="popup-sub">${cfg.label}</div>`)
+        .addTo(map);
+    });
+    map.on('mouseleave', `${cfg.id}-line`, () => {
+      map.getCanvas().style.cursor = '';
+      map.setFilter(`${cfg.id}-hover`, ['==', cfg.nameField, '___none___']);
+      popup.remove();
+    });
+    // Click para seleccionar en pestaña filtro
+    map.on('click', `${cfg.id}-line`, (e) => {
+      if (!e.features.length) return;
+      const name = e.features[0].properties[cfg.nameField];
+      if (cfg.id === 'estados') selectEstado(name);
+      else if (cfg.id === 'municipios' && state.selectedEstado) selectMunicipio(name);
+    });
+
+  } else if (cfg.type === 'line') {
+    map.addLayer({ id: `${cfg.id}-line`, type: 'line', source: cfg.id,
+      'source-layer': cfg.sourceLayer,
+      paint: { 'line-color': cfg.color, 'line-width': cfg.lineWidth ?? 1.2, 'line-opacity': cfg.lineOpacity ?? 0.8 }
+    });
+  } else if (cfg.type === 'point') {
+    map.addLayer({ id: `${cfg.id}-circle`, type: 'circle', source: cfg.id,
+      'source-layer': cfg.sourceLayer,
+      paint: {
+        'circle-color': cfg.color, 'circle-radius': 4,
+        'circle-opacity': cfg.fillOpacity ?? 0.8,
+        'circle-stroke-color': '#fff', 'circle-stroke-width': 0.8
+      }
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CONSTRUIR LISTA DE CAPAS (con drag & drop)
+// ══════════════════════════════════════════════════════════════
+function buildLayerList() {
+  const container = document.getElementById('layers-list');
+  container.innerHTML = '';
+
+  // Mostramos en orden inverso: el primero en la lista = encima en el mapa
+  [...state.layerOrder].reverse().forEach(id => {
+    const cfg = LAYERS.find(l => l.id === id);
+    if (!cfg) return;
+
     const item = document.createElement('div');
     item.className = 'layer-item';
+    item.draggable = true;
+    item.dataset.id = cfg.id;
+
     item.innerHTML = `
       <div class="layer-item-top">
+        <div class="drag-handle" title="Arrastra para reordenar">
+          <span></span><span></span><span></span>
+        </div>
         <input type="checkbox" class="layer-checkbox" id="chk-${cfg.id}" checked />
         <span class="layer-color-dot" style="background:${cfg.color}"></span>
         <label class="layer-name" for="chk-${cfg.id}">${cfg.label}</label>
@@ -575,36 +484,33 @@ function buildExtraLayerControls() {
         <span class="layer-opacity-label" id="lbl-op-${cfg.id}">100%</span>
         <input type="range" class="layer-opacity" id="op-${cfg.id}" min="0" max="100" value="100" />
       </div>`;
+
     container.appendChild(item);
-    bindLayerControls(cfg);
+    bindLayerControls(cfg, item);
+    bindDragEvents(item);
   });
 }
 
 // ══════════════════════════════════════════════════════════════
-//  BIND CONTROLES (checkbox + opacidad)
+//  BIND CONTROLES DE CAPA
 // ══════════════════════════════════════════════════════════════
-function bindLayerControls(cfg) {
-  const chk    = document.getElementById(`chk-${cfg.id}`);
-  const slider = document.getElementById(`op-${cfg.id}`);
-  const label  = document.getElementById(`lbl-op-${cfg.id}`);
-  if (!chk || !slider) return;
+function bindLayerControls(cfg, item) {
+  const chk    = item.querySelector(`#chk-${cfg.id}`);
+  const slider = item.querySelector(`#op-${cfg.id}`);
+  const label  = item.querySelector(`#lbl-op-${cfg.id}`);
 
-  const layerIds = [`${cfg.id}-fill`, `${cfg.id}-line`, `${cfg.id}-fill-selected`,
-                    `${cfg.id}-hover`, `${cfg.id}-circle`];
+  const mapLayerIds = [`${cfg.id}-hover`, `${cfg.id}-fill-selected`,
+                       `${cfg.id}-line`, `${cfg.id}-circle`];
 
   chk.addEventListener('change', () => {
     const vis = chk.checked ? 'visible' : 'none';
-    layerIds.forEach(lid => { if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', vis); });
+    mapLayerIds.forEach(lid => { if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', vis); });
   });
 
   slider.addEventListener('input', () => {
-    const pct = parseInt(slider.value);
-    const v   = pct / 100;
-    label.textContent = `${pct}%`;
-
+    const v = parseInt(slider.value) / 100;
+    label.textContent = `${slider.value}%`;
     if (cfg.type === 'polygon') {
-      if (map.getLayer(`${cfg.id}-fill`))
-        map.setPaintProperty(`${cfg.id}-fill`, 'fill-opacity', (cfg.fillOpacity ?? 0.12) * v);
       if (map.getLayer(`${cfg.id}-line`))
         map.setPaintProperty(`${cfg.id}-line`, 'line-opacity', (cfg.lineOpacity ?? 0.7) * v);
     } else if (cfg.type === 'line') {
@@ -617,8 +523,86 @@ function bindLayerControls(cfg) {
   });
 }
 
-// Bind capas builtIn que ya existen en el HTML
-LAYERS.filter(l => l.builtIn).forEach(cfg => bindLayerControls(cfg));
+// ══════════════════════════════════════════════════════════════
+//  DRAG & DROP para reordenar capas
+// ══════════════════════════════════════════════════════════════
+let dragSrc = null;
+
+function bindDragEvents(item) {
+  item.addEventListener('dragstart', (e) => {
+    dragSrc = item;
+    item.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  item.addEventListener('dragend', () => {
+    item.classList.remove('dragging');
+    document.querySelectorAll('.layer-item').forEach(el => el.classList.remove('drag-over'));
+  });
+  item.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.layer-item').forEach(el => el.classList.remove('drag-over'));
+    if (item !== dragSrc) item.classList.add('drag-over');
+  });
+  item.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (!dragSrc || dragSrc === item) return;
+    item.classList.remove('drag-over');
+
+    const srcId  = dragSrc.dataset.id;
+    const destId = item.dataset.id;
+
+    // Reordenar en el DOM
+    const container = document.getElementById('layers-list');
+    const items = [...container.querySelectorAll('.layer-item')];
+    const srcIdx  = items.findIndex(el => el.dataset.id === srcId);
+    const destIdx = items.findIndex(el => el.dataset.id === destId);
+
+    if (srcIdx < destIdx) {
+      container.insertBefore(dragSrc, item.nextSibling);
+    } else {
+      container.insertBefore(dragSrc, item);
+    }
+
+    // Reordenar en el mapa
+    // El orden visual de la lista: primero = encima en mapa
+    // El orden en el mapa (MapLibre): las capas agregadas después están encima
+    applyLayerOrder();
+  });
+}
+
+function applyLayerOrder() {
+  // Leer orden actual del DOM (primero en lista = encima en mapa)
+  const listItems = [...document.querySelectorAll('#layers-list .layer-item')];
+  // Invertir: el último de la lista va primero en el mapa (abajo)
+  const orderedIds = listItems.map(el => el.dataset.id).reverse();
+  state.layerOrder = orderedIds;
+
+  // Mover capas en MapLibre para reflejar el nuevo orden
+  // Subimos cada grupo de capas en el orden correcto
+  orderedIds.forEach((id, idx) => {
+    const cfg = LAYERS.find(l => l.id === id);
+    if (!cfg) return;
+    const layerIds = [`${id}-hover`, `${id}-fill-selected`, `${id}-line`, `${id}-circle`]
+      .filter(lid => map.getLayer(lid));
+
+    // Mover todas las sublayers de esta capa por encima de las anteriores
+    layerIds.forEach(lid => {
+      // moveLayer sin segundo argumento mueve al tope
+      // Para respetar orden entre capas, movemos por encima del grupo anterior
+      if (idx === orderedIds.length - 1) {
+        // La capa más alta: al tope
+        map.moveLayer(lid);
+      } else {
+        // Mover por debajo de la capa superior
+        const nextId = orderedIds[idx + 1];
+        const nextFirstLayer = [`${nextId}-hover`, `${nextId}-fill-selected`, `${nextId}-line`, `${nextId}-circle`]
+          .find(lid2 => map.getLayer(lid2));
+        if (nextFirstLayer) map.moveLayer(lid, nextFirstLayer);
+      }
+    });
+  });
+}
 
 // ══════════════════════════════════════════════════════════════
 //  TABS
@@ -633,7 +617,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ══════════════════════════════════════════════════════════════
-//  LISTA DE ESTADOS
+//  CARGA LISTA DE ESTADOS
 // ══════════════════════════════════════════════════════════════
 let allEstados = [];
 let estadosLoaded = false;
@@ -651,7 +635,7 @@ function onSourceData(e) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  RENDER LISTA GENÉRICA
+//  RENDER LISTA
 // ══════════════════════════════════════════════════════════════
 function renderGeoList(containerId, items, onSelect, activeItem = null) {
   const container = document.getElementById(containerId);
@@ -680,16 +664,12 @@ document.getElementById('search-estado').addEventListener('input', (e) => {
 
 document.getElementById('search-municipio').addEventListener('input', (e) => {
   const q = norm(e.target.value);
-  const cfg = LAYERS.find(l => l.id === 'municipios');
+  const cfg   = LAYERS.find(l => l.id === 'municipios');
   if (!cfg) return;
-  const feats  = map.querySourceFeatures('municipios', { sourceLayer: cfg.sourceLayer });
+  const feats = map.querySourceFeatures('municipios', { sourceLayer: cfg.sourceLayer });
   const nombres = [...new Set(feats.map(f => f.properties[cfg.nameField]))].filter(Boolean).sort();
   renderGeoList('list-municipios', nombres.filter(n => norm(n).includes(q)), selectMunicipio, state.selectedMunicipio);
 });
-
-function norm(s) {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
 
 // ══════════════════════════════════════════════════════════════
 //  SELECCIONAR ESTADO
@@ -702,17 +682,64 @@ function selectEstado(nombre) {
   const cfg = LAYERS.find(l => l.id === 'estados');
   map.setFilter('estados-fill-selected', ['==', cfg.nameField, nombre]);
 
-  // Limpiar municipio seleccionado
+  // Limpiar selección de municipio
   if (map.getLayer('municipios-fill-selected'))
     map.setFilter('municipios-fill-selected', ['==', 'NOMGEO', '___none___']);
+
+  // Restaurar visibilidad total de municipios (por si había filtro previo)
+  restoreMunicipiosVisibility();
 
   setBadge('badge-estado', nombre);
   setBadge('badge-municipio', null);
   highlightList('list-estados', nombre);
+  showDeselect('desel-estado', true);
+  showDeselect('desel-municipio', false);
+
+  // Habilitar sección de municipios
+  document.getElementById('section-municipio').classList.remove('disabled');
+  document.getElementById('municipio-hint').style.display = 'none';
+
   zoomToFeatures('estados', cfg.sourceLayer, cfg.nameField, nombre);
   loadMunicipios(nombre);
   updateButtons();
   setClipStatus(`Área: ${nombre}`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DESELECCIONAR ESTADO
+// ══════════════════════════════════════════════════════════════
+document.getElementById('desel-estado').addEventListener('click', () => {
+  clearEstado();
+});
+
+function clearEstado() {
+  state.selectedEstado    = null;
+  state.selectedMunicipio = null;
+  state.selectedCVE_ENT   = null;
+  state.clippedData       = {};
+
+  if (map.getLayer('estados-fill-selected'))
+    map.setFilter('estados-fill-selected', ['==', 'NOMGEO', '___none___']);
+
+  restoreMunicipiosVisibility();
+  if (map.getLayer('municipios-fill-selected'))
+    map.setFilter('municipios-fill-selected', ['==', 'NOMGEO', '___none___']);
+
+  setBadge('badge-estado', null);
+  setBadge('badge-municipio', null);
+  showDeselect('desel-estado', false);
+  showDeselect('desel-municipio', false);
+  highlightList('list-estados', null);
+
+  document.getElementById('section-municipio').classList.add('disabled');
+  document.getElementById('municipio-hint').style.display = 'block';
+  document.getElementById('list-municipios').innerHTML = '';
+  document.getElementById('search-municipio').value = '';
+  document.getElementById('btn-download-clip').disabled = true;
+
+  map.flyTo({ center: [-102.5, 23.5], zoom: 4.5, duration: 700 });
+  updateButtons();
+  setClipStatus('Sin área seleccionada');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -723,45 +750,89 @@ function loadMunicipios(nombreEstado) {
   const munCfg    = LAYERS.find(l => l.id === 'municipios');
   if (!munCfg) return;
 
-  // Obtener CVE_ENT
   const feats = map.querySourceFeatures('estados', { sourceLayer: estadoCfg.sourceLayer })
     .filter(f => f.properties[estadoCfg.nameField] === nombreEstado);
 
   if (feats.length) {
     const cve = feats[0].properties['CVE_ENT'];
     state.selectedCVE_ENT = cve;
-    if (cve) {
-      const f = ['==', munCfg.stateField ?? 'CVE_ENT', cve];
-      ['municipios-fill','municipios-line','municipios-hover','municipios-fill-selected']
-        .forEach(lid => { if (map.getLayer(lid)) map.setFilter(lid, f); });
-    }
+    // NO filtramos municipios aquí — se muestran todos hasta que se seleccione uno
   }
 
-  // Poblar lista con delay para que el mapa cargue los tiles
   setTimeout(() => {
-    const mFeats = map.querySourceFeatures('municipios', { sourceLayer: munCfg.sourceLayer });
+    const mFeats  = map.querySourceFeatures('municipios', { sourceLayer: munCfg.sourceLayer });
     const nombres = [...new Set(mFeats.map(f => f.properties[munCfg.nameField]))].filter(Boolean).sort();
     renderGeoList('list-municipios', nombres, selectMunicipio);
   }, 900);
 }
 
 // ══════════════════════════════════════════════════════════════
-//  SELECCIONAR MUNICIPIO
+//  SELECCIONAR MUNICIPIO — oculta los demás
 // ══════════════════════════════════════════════════════════════
 function selectMunicipio(nombre) {
   state.selectedMunicipio = nombre;
   state.clippedData = {};
 
+  const munCfg = LAYERS.find(l => l.id === 'municipios');
+  if (!munCfg) return;
+
+  // Resaltar selección
   if (map.getLayer('municipios-fill-selected'))
-    map.setFilter('municipios-fill-selected', ['==', 'NOMGEO', nombre]);
+    map.setFilter('municipios-fill-selected', ['==', munCfg.nameField, nombre]);
+
+  // Ocultar todos los demás municipios — solo mostrar el seleccionado
+  const showFilter = ['==', munCfg.nameField, nombre];
+  if (map.getLayer('municipios-line'))
+    map.setFilter('municipios-line', showFilter);
+  if (map.getLayer('municipios-hover'))
+    map.setFilter('municipios-hover', showFilter);
 
   setBadge('badge-municipio', nombre);
   highlightList('list-municipios', nombre);
+  showDeselect('desel-municipio', true);
 
-  const munCfg = LAYERS.find(l => l.id === 'municipios');
   zoomToFeatures('municipios', munCfg.sourceLayer, munCfg.nameField, nombre);
   updateButtons();
-  setClipStatus(`Área: ${nombre}, ${state.selectedEstado}`);
+  setClipStatus(`Área: ${nombre} — ${state.selectedEstado}`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DESELECCIONAR MUNICIPIO — restaura vista del estado
+// ══════════════════════════════════════════════════════════════
+document.getElementById('desel-municipio').addEventListener('click', () => {
+  clearMunicipio();
+});
+
+function clearMunicipio() {
+  state.selectedMunicipio = null;
+  state.clippedData = {};
+
+  if (map.getLayer('municipios-fill-selected'))
+    map.setFilter('municipios-fill-selected', ['==', 'NOMGEO', '___none___']);
+
+  restoreMunicipiosVisibility();
+
+  setBadge('badge-municipio', null);
+  showDeselect('desel-municipio', false);
+  highlightList('list-municipios', null);
+  document.getElementById('btn-download-clip').disabled = true;
+
+  // Volver a zoom del estado
+  if (state.selectedEstado) {
+    const cfg = LAYERS.find(l => l.id === 'estados');
+    zoomToFeatures('estados', cfg.sourceLayer, cfg.nameField, state.selectedEstado);
+    setClipStatus(`Área: ${state.selectedEstado}`);
+  }
+  updateButtons();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RESTAURAR VISIBILIDAD DE MUNICIPIOS
+// ══════════════════════════════════════════════════════════════
+function restoreMunicipiosVisibility() {
+  // Quitar todos los filtros de línea y hover de municipios
+  if (map.getLayer('municipios-line'))  map.setFilter('municipios-line',  null);
+  if (map.getLayer('municipios-hover')) map.setFilter('municipios-hover', null);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -810,7 +881,6 @@ document.getElementById('btn-clip').addEventListener('click', () => {
     return;
   }
 
-  // Construir máscara unificada
   let mask;
   try {
     const fc = turf.featureCollection(maskFeats.map(f => turf.feature(f.geometry, {})));
@@ -823,7 +893,7 @@ document.getElementById('btn-clip').addEventListener('click', () => {
   let total = 0;
 
   LAYERS.forEach(cfg => {
-    const chk = document.getElementById(`chk-${cfg.id}`);
+    const chk = document.querySelector(`#layers-list [data-id="${cfg.id}"] .layer-checkbox`);
     if (chk && !chk.checked) return;
 
     const feats = map.querySourceFeatures(cfg.id, { sourceLayer: cfg.sourceLayer });
@@ -841,7 +911,7 @@ document.getElementById('btn-clip').addEventListener('click', () => {
           if (result) result.properties = f.properties;
         }
         if (result) clipped.push(result);
-      } catch(e) { /* geometría inválida, omitir */ }
+      } catch(e) { /* geometría inválida */ }
     });
 
     if (clipped.length) {
@@ -871,38 +941,14 @@ function downloadGeoJSON(geojson, filename) {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url; a.download = `${filename}.geojson`;
-  a.click();
-  URL.revokeObjectURL(url);
+  a.click(); URL.revokeObjectURL(url);
 }
 
 // ══════════════════════════════════════════════════════════════
-//  RESET
+//  RESET TOTAL
 // ══════════════════════════════════════════════════════════════
 document.getElementById('btn-reset').addEventListener('click', () => {
-  state.selectedEstado    = null;
-  state.selectedMunicipio = null;
-  state.selectedCVE_ENT   = null;
-  state.clippedData       = {};
-
-  LAYERS.forEach(cfg => {
-    if (map.getLayer(`${cfg.id}-fill-selected`))
-      map.setFilter(`${cfg.id}-fill-selected`, ['==', cfg.nameField, '___none___']);
-    if (cfg.id === 'municipios') {
-      ['municipios-fill','municipios-line','municipios-hover','municipios-fill-selected']
-        .forEach(lid => { if (map.getLayer(lid)) map.setFilter(lid, null); });
-    }
-  });
-
-  setBadge('badge-estado', null);
-  setBadge('badge-municipio', null);
-  document.querySelectorAll('.geo-item').forEach(el => el.classList.remove('active'));
-  document.getElementById('list-municipios').innerHTML =
-    '<div class="geo-item" style="color:var(--ink-muted);cursor:default;font-size:10px">Selecciona un estado primero</div>';
-  document.getElementById('btn-download-clip').disabled = true;
-
-  map.flyTo({ center: [-102.5, 23.5], zoom: 4.5, duration: 700 });
-  updateButtons();
-  setClipStatus('Sin área seleccionada');
+  clearEstado(); // clearEstado ya limpia todo
   toast('Selección limpiada');
 });
 
@@ -913,6 +959,10 @@ function setBadge(id, text) {
   const el = document.getElementById(id);
   if (text) { el.textContent = text; el.classList.add('visible'); }
   else       { el.textContent = ''; el.classList.remove('visible'); }
+}
+
+function showDeselect(id, visible) {
+  document.getElementById(id).classList.toggle('visible', visible);
 }
 
 function highlightList(containerId, name) {
@@ -929,6 +979,10 @@ function updateButtons() {
 
 function setClipStatus(msg) {
   document.getElementById('clip-status').textContent = msg;
+}
+
+function norm(s) {
+  return (s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 let toastTimer;
