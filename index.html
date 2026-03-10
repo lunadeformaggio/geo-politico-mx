@@ -408,8 +408,40 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 //  CONFIGURACIÓN DE CAPAS
-//  type: 'polygon' | 'line' | 'point'
-//  Para agregar capas nuevas, añade objetos a este array.
+//  ─────────────────────────────────────────────────────────────
+//  Para agregar una capa nueva, copia uno de los bloques de
+//  ejemplo al final de este array y ajusta sus propiedades.
+//
+//  PROPIEDADES COMUNES (todos los tipos):
+//    id          → identificador único (sin espacios)
+//    label       → nombre visible en el panel de capas
+//    url         → ruta al archivo PMTiles (pmtiles://data/archivo.pmtiles)
+//    sourceLayer → nombre interno de la capa dentro del PMTiles
+//                  (tippecanoe lo toma del nombre del archivo por defecto)
+//    nameField   → campo que se usa como nombre/etiqueta del elemento
+//    type        → 'polygon' | 'line' | 'point'
+//    color       → color principal en hex (#rrggbb)
+//
+//  ESTILO POLÍGONOS (type: 'polygon'):
+//    lineWidth   → grosor del borde en píxeles (ej: 1.2)
+//    lineOpacity → opacidad del borde, 0-1 (ej: 0.85)
+//    (el relleno solo aparece en hover y selección, no permanente)
+//
+//  ESTILO LÍNEAS (type: 'line'):
+//    lineWidth   → grosor de la línea en píxeles (ej: 1.5)
+//    lineOpacity → opacidad de la línea, 0-1 (ej: 0.8)
+//
+//  ESTILO PUNTOS (type: 'point'):
+//    fillOpacity → opacidad del círculo, 0-1 (ej: 0.8)
+//    (radio fijo en 4px — para cambiarlo busca 'circle-radius' en addLayerToMap)
+//
+//  PALETA DE COLORES SUGERIDA (coherente con el tema del visor):
+//    Verde oscuro  #2d5a3d  → delimitaciones principales
+//    Azul grisáceo #5a7a8a  → delimitaciones secundarias
+//    Café dorado   #8b6914  → carreteras / infraestructura
+//    Azul medio    #2a5f8f  → hidrología
+//    Rojo oscuro   #8b3a3a  → localidades / puntos de interés
+//    Gris medio    #6b6760  → capas de referencia
 // ══════════════════════════════════════════════════════════════
 const LAYERS = [
   {
@@ -435,14 +467,27 @@ const LAYERS = [
     lineOpacity: 0.6,
     lineWidth:   0.5
   }
-  // Ejemplos de capas adicionales:
+  // ── EJEMPLOS — descomenta y ajusta para agregar capas ────────
+  //
+  // POLÍGONO (ej: hidrología con cuerpos de agua):
+  // { id:'hidrologia', label:'Hidrología', url:'pmtiles://data/Hidrologia.pmtiles',
+  //   sourceLayer:'Hidrologia', nameField:'NOMBRE', type:'polygon',
+  //   color:'#2a5f8f', lineWidth:0.8, lineOpacity:0.7 },
+  //
+  // LÍNEA (ej: carreteras):
   // { id:'carreteras', label:'Carreteras', url:'pmtiles://data/Carreteras.pmtiles',
   //   sourceLayer:'Carreteras', nameField:'NOMBRE', type:'line',
-  //   color:'#8b6914', lineOpacity:0.8, lineWidth:1.5 }
+  //   color:'#8b6914', lineWidth:1.5, lineOpacity:0.8 },
   //
+  // LÍNEA (ej: líneas de alta tensión):
+  // { id:'alta-tension', label:'Alta Tensión (CFE)', url:'pmtiles://data/AltaTension.pmtiles',
+  //   sourceLayer:'AltaTension', nameField:'NOMBRE', type:'line',
+  //   color:'#c47d00', lineWidth:1.0, lineOpacity:0.75 },
+  //
+  // PUNTO (ej: localidades):
   // { id:'localidades', label:'Localidades', url:'pmtiles://data/Localidades.pmtiles',
   //   sourceLayer:'Localidades', nameField:'NOMGEO', type:'point',
-  //   color:'#8b3a3a', fillOpacity:0.8 }
+  //   color:'#8b3a3a', fillOpacity:0.85 },
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -829,6 +874,15 @@ function selectEstado(nombre, skipZoom = false) {
     map.setFilter('estados-hover', ['==', 'NOMGEO', '___none___']);
   popup.remove();
 
+  // Ocultar todos los estados excepto el seleccionado
+  const estadoFilter = ['==', cfg.nameField, nombre];
+  if (map.getLayer('estados-line'))     map.setFilter('estados-line',     estadoFilter);
+  if (map.getLayer('estados-fill-hit')) map.setFilter('estados-fill-hit', estadoFilter);
+
+  // Mostrar todos los municipios del estado (sin filtro de municipio aún)
+  if (map.getLayer('municipios-line'))     map.setFilter('municipios-line',     null);
+  if (map.getLayer('municipios-fill-hit')) map.setFilter('municipios-fill-hit', null);
+
   setBadge('badge-estado', nombre);
   setBadge('badge-municipio', null);
   highlightList('list-estados', nombre);
@@ -860,6 +914,11 @@ function clearEstado() {
 
   if (map.getLayer('estados-fill-selected'))
     map.setFilter('estados-fill-selected', ['==', 'NOMGEO', '___none___']);
+
+  // Restaurar visibilidad de todos los estados
+  if (map.getLayer('estados-line'))     map.setFilter('estados-line',     null);
+  if (map.getLayer('estados-fill-hit')) map.setFilter('estados-fill-hit', null);
+  if (map.getLayer('estados-hover'))    map.setFilter('estados-hover',    null);
 
   restoreMunicipiosVisibility();
   if (map.getLayer('municipios-fill-selected'))
@@ -960,6 +1019,7 @@ function clearMunicipio() {
   if (map.getLayer('municipios-fill-selected'))
     map.setFilter('municipios-fill-selected', ['==', 'NOMGEO', '___none___']);
 
+  // Restaurar todos los municipios visibles (del estado seleccionado)
   restoreMunicipiosVisibility();
 
   setBadge('badge-municipio', null);
